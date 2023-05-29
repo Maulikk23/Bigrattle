@@ -151,7 +151,8 @@ foreach ($cart as $product_id => $quantity) {
                                         </td>
                                         <td class="name-pr">
                                             <a href="#">
-                                                <input type="hidden" id="pro_id" value="<?= $product['product_id']; ?>">
+                                                <input type="hidden" id="pro_id_<?= $product['product_id']; ?>"
+                                                    value="<?= $product['product_id']; ?>">
                                                 <input type="hidden" id="user_id" value="<?= $_COOKIE['user_id']; ?>">
                                                 <?= $product['product_name'] ?>
                                             </a>
@@ -164,9 +165,12 @@ foreach ($cart as $product_id => $quantity) {
                                         <td class="quantity-box">
                                             <form action="apis/update_quantity_cart.php" method="POST">
                                                 <input type="hidden" name="API_KEY" value="sXZ7tdYP7hy2qZKD9cL" />
-                                                <input type="hidden" name="product_id" value="<?= $product['product_id'] ?>" />
-                                                <input type="number" name="quantity" id="order_quantity"
-                                                    value="<?= $product['ordered_quantity'] ?>" size="4" min="0" step="1"style="width:60%;">
+                                                <input type="hidden" name="product_id"
+                                                    value="<?= $product['product_id'] ?>" />
+                                                <input type="number" name="quantity"
+                                                    id="order_quantity_<?= $product['product_id']; ?>"
+                                                    value="<?= $product['ordered_quantity'] ?>" size="4" min="0" step="1"
+                                                    style="width: 60%;">
                                                 <button style="cursor:pointer;" type="submit">Update</button>
                                             </form>
                                         </td>
@@ -212,34 +216,50 @@ foreach ($cart as $product_id => $quantity) {
             <script>
 
                 function placeOrder() {
-                    // Get the necessary values from the page
-                    var productID = $('#pro_id').val();
-                    var orderedQuantity = $('#order_quantity').val();
-                    var orderedAmount = $('#total_amount').val();
-                    var userID = $('#user_id').val();
 
-                    // Perform any necessary validation on the values
+                    // window.location.href ="apis/place_order.php";
 
-                    // Send the data to the server using AJAX or any other method
+                    var cartItems = [];
+
+                    // Iterate over each product in the cart
+                    <?php foreach ($product_array as $product) { ?>
+                        var productID = $('#pro_id_<?= $product['product_id']; ?>').val();
+                        var orderedQuantity = $('#order_quantity_<?= $product['product_id']; ?>').val();
+
+                        // Create an object representing a cart item
+                        var cartItem = {
+                            product_id: productID,
+                            ordered_qty: orderedQuantity
+                        };
+
+                        // console.log(cartItem);
+
+                        // Add the cart item to the array
+                        cartItems.push(cartItem);
+                    <?php } ?>
+
+                    // Prepare the data to be sent to the server
+                    var data = {
+                        cart_items: cartItems,
+                        API_KEY: 'sXZ7tdYP7hy2qZKD9cL'
+                    };
+
+                    // Send the data to the server using AJAX
                     $.ajax({
                         url: 'apis/place_order.php',
                         method: 'POST',
-                        data: {
-                            product_id: productID,
-                            ordered_qty: orderedQuantity,
-                            ordered_amount: orderedAmount,
-                            user_id: userID,
-                            API_KEY: 'sXZ7tdYP7hy2qZKD9cL'
+                        data: data,
+                        success: function (data) {
+                            result = $.parseJSON(data);
+                            if (result.response == 'y') {
+                                alert(result.message);
+                                window.location.href = "my-account.php";
+                            } else {
+                                alert(result.message);
+                            }
                         },
-                        success: function (response) {
-                            // Handle the success response from the server
-                            console.log(response);
-                            // window.location.href = "apis/place_order.php";
-                        },
-                        error: function (xhr, status, error) {
-                            // Handle any error that occurs during the request
-                            console.log(error);
-                            // Display an error message to the user
+                        error: function () {
+                            alert('An error occurred while processing your request.');
                         }
                     });
                 }
